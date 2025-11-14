@@ -75,284 +75,128 @@ def validate_input_file(input_file: str) -> bool:
     return True
 
 
-# 显示欢迎信息
-def show_welcome():
-    """显示欢迎信息"""
-    welcome_text = """
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                    学术论文自动下载器 Academic Paper Downloader            ║
-║                                                                              ║
-║  🔍 支持多平台搜索 (Google Scholar, Sci-Hub, arXiv)                         ║
-║  📄 自动解析论文列表文件                                                     ║
-║  💾 批量下载PDF文件                                                         ║
-║  ⚡ 异步处理，高效快速                                                      ║
-║  🛡️  智能错误处理和重试机制                                                 ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-    """
-    click.echo(welcome_text)
 
 
-# 显示完成信息
-def show_completion_summary(report: dict):
-    """显示完成摘要"""
-    summary = report.get('summary', {})
-    
-    search_success_rate_str = f"{summary.get('search_success_rate', 0):.1%}"
-    download_success_rate_str = f"{summary.get('download_success_rate', 0):.1%}"
-
-    completion_text = f"""
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                              任务完成！                                      ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║  总论文数: {summary.get('total_papers', 0):\u003c45} ║
-║  搜索成功: {summary.get('successful_searches', 0):\u003c45} ║
-║  搜索失败: {summary.get('failed_searches', 0):\u003c45} ║
-║  下载成功: {summary.get('successful_downloads', 0):\u003c45} ║
-║  下载失败: {summary.get('failed_downloads', 0):\u003c45} ║
-║  搜索成功率: {search_success_rate_str:\u003c45} ║
-║  下载成功率: {download_success_rate_str:\u003c45} ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-    """
-    click.echo(completion_text)
 
 
-@click.group(invoke_without_command=True)
+
+
+@click.command()
 @click.option(
     '--input', '-i',
-    required=False,
-    type=click.Path(exists=True),
-    help='输入文件路径（包含论文列表）'
+    required=True,
+    type=click.Path(exists=True, readable=True, dir_okay=False),
+    help='包含论文标题的输入文件路径 (.txt, .csv, .xlsx, .xls, .json)。'
 )
 @click.option(
     '--output', '-o',
     default='./downloads',
-    type=click.Path(),
-    help='输出目录路径（默认: ./downloads）'
-)
-@click.option(
-    '--config', '-c',
-    type=click.Path(exists=True),
-    help='配置文件路径（YAML格式）'
-)
-@click.option(
-    '--platforms', '-p',
-    default='all',
-    help='搜索平台，逗号分隔 (google_scholar,scihub,arxiv,all) 默认: all'
-)
-@click.option(
-    '--max-results', '-n',
-    default=5,
-    type=int,
-    help='每个平台最大搜索结果数（默认: 5）'
-)
-@click.option(
-    '--max-concurrent', '-C',
-    default=3,
-    type=int,
-    help='最大并发下载数（默认: 3）'
-)
-@click.option(
-    '--async/--sync', 'async_mode',
-    default=True,
-    help='使用异步/同步模式（默认: 异步）'
-)
-@click.option(
-    '--overwrite/--no-overwrite',
-    default=False,
-    help='覆盖已存在的文件（默认: 不覆盖）'
+    type=click.Path(file_okay=False, resolve_path=True),
+    help='下载论文的输出目录。'
 )
 @click.option(
     '--log-level', '-l',
     default='INFO',
     type=click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR']),
-    help='日志级别（默认: INFO）'
+    help='设置日志记录级别。'
 )
 @click.option(
     '--log-file',
-    type=click.Path(),
-    help='日志文件路径'
+    type=click.Path(dir_okay=False),
+    help='将日志输出到指定文件。'
 )
 @click.option(
     '--proxy',
     is_flag=True,
-    help='使用代理（需要在配置文件中配置）'
+    help='启用在 config.yaml 中配置的网络代理。'
 )
-@click.option(
-    '--test-mode',
-    is_flag=True,
-    help='测试模式（只处理前3篇论文）'
-)
-@click.option(
-    '--quiet', '-q',
-    is_flag=True,
-    help='静默模式（只显示错误信息）'
-)
-@click.version_option(version='1.0.0', prog_name='Academic Paper Downloader')
-@click.pass_context
-def main(ctx, input, output, config, platforms, max_results, max_concurrent, async_mode, 
-         overwrite, log_level, log_file, proxy, test_mode, quiet):
+@click.version_option(version='1.0.0', prog_name='Fast Paper Downloader')
+def main(input: str, output: str, log_level: str, log_file: Optional[str], proxy: bool):
     """
-    学术论文自动下载器
-    
-    自动从多个学术平台（Google Scholar、Sci-Hub、arXiv）搜索并下载PDF文件。
-    
-    示例:
-    
-        \b
-        # 基本使用
-        python main.py -i papers.txt
-        
-        \b
-        # 指定输出目录和平台
-        python main.py -i papers.txt -o ./my_papers -p google_scholar,scihub
-        
-        \b
-        # 使用详细日志和测试模式
-        python main.py -i papers.txt -l DEBUG --test-mode
+    一个根据标题自动下载论文的命令行工具。
     """
-    
-    # 设置日志
-    if quiet:
-        log_level = 'ERROR'
-    
+    # 1. 配置日志
     setup_logging(log_level, log_file)
-    
-    # 显示欢迎信息
-    if not quiet:
-        show_welcome()
-    
-    # 若有子命令，主流程不执行
-    if ctx.invoked_subcommand is not None:
-        return
+    logger.info("Fast Paper Downloader 启动")
 
-    # 若无子命令，则要求输入文件
-    if not input:
-        click.echo('Error: 需要提供 --input/-i 输入文件路径')
-        sys.exit(2)
-    # 验证输入文件
+    # 2. 验证输入文件
     if not validate_input_file(input):
         sys.exit(1)
-    
-    # 加载配置
-    config_data = {}
-    if config:
-        config_data = load_config(config)
-    
-    # 解析平台参数
-    if platforms == 'all':
-        selected_platforms = SUPPORTED_PLATFORMS
-    else:
-        selected_platforms = [p.strip() for p in platforms.split(',')]
-        # 验证平台名称
-        for platform in selected_platforms:
-            if platform not in SUPPORTED_PLATFORMS:
-                logger.error(f"不支持的平台: {platform}")
-                logger.info(f"支持的平台: {', '.join(SUPPORTED_PLATFORMS)}")
-                sys.exit(1)
-    
-    # 创建搜索和下载配置
+
+    # 3. 加载并配置代理
+    if proxy:
+        # 注意：配置文件路径是硬编码的，以简化操作
+        config = load_config('config.yaml')
+        if 'proxy' in config and config.get('proxy'):
+            http_proxy = config['proxy'].get('http')
+            https_proxy = config['proxy'].get('https')
+            
+            if http_proxy:
+                os.environ['HTTP_PROXY'] = http_proxy
+            if https_proxy:
+                os.environ['HTTPS_PROXY'] = https_proxy
+
+            if http_proxy or https_proxy:
+                logger.info("已启用网络代理。")
+            else:
+                logger.warning("代理标志已设置，但在 config.yaml 中未找到有效的 http/https 代理配置。")
+        else:
+            logger.warning("代理标志已设置，但在 config.yaml 中未找到代理配置。")
+
+    # 4. 创建搜索和下载配置（使用硬编码的简化值）
     search_config = SearchConfig(
-        platforms=selected_platforms,
-        max_results_per_platform=max_results,
-        use_async=async_mode
+        platforms=SUPPORTED_PLATFORMS,  # 使用所有支持的平台
+        max_results_per_platform=5,     # 每个平台最多5个结果
+        use_async=True                  # 始终使用异步模式
     )
     
     download_config = DownloadConfig(
         output_dir=output,
-        max_concurrent_downloads=max_concurrent,
-        overwrite_existing=overwrite,
-        save_metadata=True
+        max_concurrent_downloads=5,     # 硬编码并发数
+        overwrite_existing=False,       # 不覆盖现有文件
+        save_metadata=True              # 保存元数据
     )
+
+    # 5. 初始化下载协调器
+    coordinator = PaperDownloaderCoordinator(search_config, download_config)
     
-    # 显示配置信息
-    if not quiet:
-        click.echo("\n📋 配置信息:")
-        click.echo(f"  输入文件: {input}")
-        click.echo(f"  输出目录: {output}")
-        click.echo(f"  搜索平台: {', '.join(selected_platforms)}")
-        click.echo(f"  最大结果数: {max_results}")
-        click.echo(f"  并发下载数: {max_concurrent}")
-        click.echo(f"  异步模式: {'是' if async_mode else '否'}")
-        click.echo(f"  覆盖现有文件: {'是' if overwrite else '否'}")
-        click.echo(f"  测试模式: {'是' if test_mode else '否'}")
-        click.echo()
-    
-    # 运行主程序
+    logger.info(f"输入文件: {input}")
+    logger.info(f"输出目录: {os.path.abspath(output)}")
+    logger.info("🚀 开始处理论文列表...")
+
+    # 6. 运行主下载程序
     try:
-        # 创建协调器
-        coordinator = PaperDownloaderCoordinator(search_config, download_config)
+        report = asyncio.run(coordinator.process_paper_list(input))
         
-        # 处理论文列表
-        if not quiet:
-            click.echo("🚀 开始处理论文列表...")
-        
-        # 运行异步主程序
-        report = asyncio.run(run_main(coordinator, input, test_mode))
-        
-        # 显示完成信息
-        if not quiet:
-            show_completion_summary(report)
-        
-        # 保存报告
-        report_file = Path(output) / f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        save_report(report, report_file)
-        
-        if not quiet:
-            click.echo(f"📊 详细报告已保存到: {report_file}")
-        
+        # 7. 显示完成摘要
+        summary = report.get('summary', {})
+        logger.info("=" * 60)
+        logger.info("✅ 所有任务已完成！")
+        logger.info(
+            f"处理结果: 总数={summary.get('total_papers', 0)}, "
+            f"搜索成功={summary.get('successful_searches', 0)}, "
+            f"下载成功={summary.get('successful_downloads', 0)}"
+        )
+        logger.info(f"下载的论文已保存到: {os.path.abspath(output)}")
+        logger.info("=" * 60)
+
     except KeyboardInterrupt:
-        logger.info("用户中断程序执行")
-        sys.exit(1)
+        logger.warning("用户中断了程序执行。")
+        sys.exit(130)
     except Exception as e:
-        logger.error(f"程序执行失败: {e}")
+        logger.error(f"程序执行期间发生意外错误: {e}")
         sys.exit(1)
     finally:
-        # 清理资源
         try:
             coordinator.close()
-        except:
-            pass
+        except Exception as e:
+            logger.debug(f"关闭协调器时发生错误: {e}")
 
 
-async def run_main(coordinator: PaperDownloaderCoordinator, input_file: str, test_mode: bool):
-    """运行主程序"""
-    if test_mode:
-        # 测试模式：只处理前3篇论文
-        logger.info("测试模式：只处理前3篇论文")
-        
-        # 解析论文列表
-        parser = PaperListParser()
-        all_papers = parser.parse_file(input_file)
-        
-        if len(all_papers) > 3:
-            test_papers = all_papers[:3]
-            # 保存测试文件
-            test_file = "test_papers.txt"
-            parser.save_papers_list(test_papers, test_file)
-            
-            try:
-                report = await coordinator.process_paper_list(test_file)
-            finally:
-                # 清理测试文件
-                if os.path.exists(test_file):
-                    os.remove(test_file)
-        else:
-            report = await coordinator.process_paper_list(input_file)
-    else:
-        report = await coordinator.process_paper_list(input_file)
-    
-    return report
 
 
-def save_report(report: dict, report_file: Path):
-    """保存报告到文件"""
-    try:
-        import json
-        with open(report_file, 'w', encoding='utf-8') as f:
-            json.dump(report, f, ensure_ascii=False, indent=2)
-        logger.info(f"报告已保存到: {report_file}")
-    except Exception as e:
-        logger.error(f"保存报告失败: {e}")
+
+
 
 
  

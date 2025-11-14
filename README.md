@@ -1,21 +1,20 @@
-# 学术论文自动下载器
+# Fast Paper Downloader
 
-一个功能强大的Python工具，用于自动从多个学术平台搜索和下载PDF文件。
+一个精简、高效的Python工具，用于根据论文标题列表自动下载学术论文。
 
 ## 功能特性
 
-- 🔍 **多平台搜索**: 支持 Google Scholar、Sci-Hub、arXiv
-- 📄 **智能解析**: 自动解析各种格式的论文列表
-- 💾 **批量下载**: 高效下载PDF文件
-- ⚡ **异步处理**: 支持并发处理，提高效率
-- 🔄 **智能重试**: 自动重试失败的下载任务
-- 📝 **详细日志**: 完整的操作日志和错误记录
-- ⚙️ **灵活配置**: 支持配置文件和命令行参数
-- 🎨 **友好界面**: 美观的命令行界面
+- 🔍 **多平台搜索**: 自动在 Google Scholar, Sci-Hub, arXiv 等多个平台搜索论文。
+- 📄 **智能解析**: 支持从 `.txt`, `.csv`, `.xlsx`, `.xls`, `.json` 文件中解析论文列表。
+- 💾 **批量下载**: 高效地批量下载PDF文件。
+- ⚡ **异步处理**: 基于 `asyncio` 实现并发处理，显著提高下载效率。
+- 📝 **详细日志**: 提供清晰的操作日志和错误记录，便于追踪。
 
 ## 快速开始
 
 ### 1. 安装依赖
+
+首先，请确保您已安装 Python 3.8+。然后，在项目根目录下运行以下命令安装所需依赖：
 
 ```bash
 pip install -r requirements.txt
@@ -23,226 +22,75 @@ pip install -r requirements.txt
 
 ### 2. 创建论文列表
 
-创建一个文本文件 `papers.txt`，每行一篇论文：
+创建一个名为 `papers.txt` 的文本文件，每行包含一篇您想下载的论文标题。
 
 ```
-Aizawa T., & Inohara T. (2019). Pico- and femtosecond laser micromachining for surface texturing. Micromachining.
-Alayed A., & Fayez F. (2025). Effects of process parameters on pulsed laser micromachining for glass-based microfluidic devices. Materials.
+Aizawa T., \u0026 Inohara T. (2019). Pico- and femtosecond laser micromachining for surface texturing. Micromachining.
+Alayed A., \u0026 Fayez F. (2025). Effects of process parameters on pulsed laser micromachining for glass-based microfluidic devices. Materials.
 ```
 
 ### 3. 运行程序
 
-```bash
-python main.py -i papers.txt
-```
-
-下载的PDF文件将保存在 `downloads/` 目录中。
-
-## 详细使用说明
-
-### 基本命令
+使用以下命令启动下载器：
 
 ```bash
-# 基本使用
-python main.py -i papers.txt
-
-# 指定输出目录
-python main.py -i papers.txt -o ./my_papers
-
-# 选择搜索平台
-python main.py -i papers.txt -p google_scholar,scihub
-
-# 使用详细日志
-python main.py -i papers.txt -l DEBUG
-
-# 测试模式（只处理前3篇）
-python main.py -i papers.txt --test-mode
+python main.py --input papers.txt
 ```
 
-### 创建示例文件
+下载的PDF文件将默认保存在 `downloads/` 目录中。
+
+## 使用说明
+
+程序现在只提供最核心的命令行选项，以实现最大程度的简化。
+
+### 命令格式
 
 ```bash
-# 创建包含10篇论文的示例文件
-python main.py create-sample -o sample_papers.txt -c 10
+python main.py --input \u003c文件路径\u003e [选项]
 ```
 
-### 配置文件
+### 可用选项
 
-编辑 `config.yaml` 文件来自定义程序行为：
+| 选项 | 缩写 | 描述 | 默认值 |
+|---|---|---|---|
+| `--input` | `-i` | **必需**。包含论文标题的输入文件路径。 | 无 |
+| `--output` | `-o` | 下载论文的输出目录。 | `./downloads` |
+| `--log-level` | `-l` | 设置日志级别 (`DEBUG`, `INFO`, `WARNING`, `ERROR`)。 | `INFO` |
+| `--log-file` | | 将日志额外输出到指定文件。 | 无 |
+| `--proxy` | | 启用网络代理（需在 `config.yaml` 中配置）。| `False` |
 
-```yaml
-# 搜索配置
-SEARCH:
-  GOOGLE_SCHOLAR:
-    MAX_RESULTS: 10
-    DELAY: 2.0
-  
-  SCIHUB:
-    MIRRORS:
-      - "https://sci-hub.se"
-      - "https://sci-hub.st"
-
-# 下载配置
-DOWNLOAD:
-  MAX_CONCURRENT: 3
-  TIMEOUT: 60
-  RETRY_ATTEMPTS: 3
-
-# 日志配置
-LOGGING:
-  LEVEL: "INFO"
-  FILE: "paper_downloader.log"
-```
-
-## 支持的文件格式
-
-### 输入文件格式
-
-1. **文本文件 (.txt)**
-   ```
-   作者1, 作者2. (年份). 标题. 期刊.
-   ```
-
-2. **CSV文件 (.csv)**
-   ```csv
-   title,authors,year
-   "论文标题","作者1, 作者2",2023
-   ```
-
-3. **JSON文件 (.json)**
-   ```json
-   [
-     {
-       "title": "论文标题",
-       "authors": ["作者1", "作者2"],
-       "year": 2023
-     }
-   ]
-   ```
-
-4. **Excel文件 (.xlsx/.xls)**
-   包含 title, authors, year 列的Excel文件
-
-### 输出文件
-
-- **PDF文件**: 下载的论文PDF文件
-- **元数据文件**: JSON格式的论文信息
-- **日志文件**: 详细的操作日志
-- **报告文件**: 下载统计报告
-
-## 高级功能
-
-### 异步处理
-
-程序默认使用异步处理，可以显著提高下载效率：
+### 使用示例
 
 ```bash
-python main.py -i papers.txt --async  # 启用异步（默认）
-python main.py -i papers.txt --sync   # 禁用异步
+# 基本用法
+python main.py --input papers.txt
+
+# 指定输出目录和日志级别
+python main.py -i papers.txt -o ./my_papers -l DEBUG
+
+# 启用代理并记录日志到文件
+python main.py -i papers.txt --proxy --log-file downloader.log
 ```
 
-### 代理支持
+## 代理配置
 
-在配置文件中设置代理：
+如需使用网络代理，请执行以下两个步骤：
 
-```yaml
-PROXY:
-  ENABLED: true
-  HTTP_PROXY: "http://proxy.example.com:8080"
-  HTTPS_PROXY: "https://proxy.example.com:8080"
-```
+1.  在项目根目录下创建一个名为 `config.yaml` 的文件。
+2.  在 `config.yaml` 文件中添加您的代理服务器地址，格式如下：
 
-### 错误处理和重试
+    ```yaml
+    proxy:
+      http: "http://127.0.0.1:7890"
+      https: "http://127.0.0.1:7890"
+    ```
 
-程序具有智能的错误处理机制：
-
-- 自动重试失败的下载任务
-- 处理网络连接错误
-- 处理PDF文件验证失败
-- 记录详细的错误信息
-
-## 故障排除
-
-### 常见问题
-
-1. **WebDriver问题**
-   ```
-   错误: Selenium WebDriver初始化失败
-   解决: 确保Chrome浏览器已安装，或禁用Selenium模式
-   ```
-
-2. **搜索无结果**
-   ```
-   错误: 所有平台搜索失败
-   解决: 检查网络连接，尝试不同的搜索关键词
-   ```
-
-3. **下载失败**
-   ```
-   错误: PDF下载失败
-   解决: 检查网络连接，尝试使用代理
-   ```
-
-### 调试模式
-
-使用调试模式获取详细信息：
-
-```bash
-python main.py -i papers.txt -l DEBUG
-```
-
-## 性能优化
-
-### 提高下载速度
-
-1. 增加并发数：
-   ```bash
-   python main.py -i papers.txt -C 5  # 5个并发下载
-   ```
-
-2. 使用异步模式（默认启用）
-
-3. 使用代理服务器
-
-### 减少请求延迟
-
-在配置文件中调整延迟参数：
-
-```yaml
-SEARCH:
-  GOOGLE_SCHOLAR:
-    DELAY: 1.0  # 减少延迟
-```
-
-## 更新日志
-
-### v1.0.0 (2024-01)
-- ✨ 初始版本发布
-- 🔍 支持Google Scholar和Sci-Hub搜索
-- 📄 支持多种输入文件格式
-- 💾 异步PDF下载
-- 📝 完整的日志和报告功能
-
-## 贡献
-
-欢迎提交Issue和Pull Request来改进这个项目。
-
-## 许可证
-
-MIT License - 详见 [LICENSE](LICENSE) 文件
+完成配置后，在运行程序时加上 `--proxy` 标志即可启用代理。
 
 ## 免责声明
 
-本工具仅供学术研究和教育用途使用。用户应遵守相关平台的服务条款和版权法规。开发者不对工具的滥用承担责任。
+本工具仅供学术研究和教育用途。用户在使用本工具时，应严格遵守相关学术平台的服务条款和版权法规。开发者不对任何因滥用本工具而导致的法律问题负责。
 
-## 支持
+## 许可证
 
-如遇到问题，请：
-
-1. 查看本README文档
-2. 检查日志文件获取详细信息
-3. 在GitHub提交Issue
-
----
-
-**Happy Downloading! 🎉**
+本项目基于 MIT 许可证。详情请参阅 [LICENSE](LICENSE) 文件。
