@@ -1,0 +1,132 @@
+# Academic Paper Downloader Configuration
+
+# 搜索配置
+SEARCH:
+  # Google Scholar 配置
+  GOOGLE_SCHOLAR:
+    BASE_URL: "https://scholar.google.com"
+    SEARCH_PATH: "/scholar"
+    MAX_RESULTS: 10
+    DELAY: 2.0  # 请求延迟（秒）
+    USER_AGENTS:
+      - "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      - "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+      - "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+  
+  # Sci-Hub 配置
+  SCIHUB:
+    MIRRORS:
+      - "https://sci-hub.se"
+      - "https://sci-hub.st"
+      - "https://sci-hub.ru"
+      - "https://sci-hub.tw"
+    TIMEOUT: 30
+    MAX_RETRIES: 3
+  
+  # arXiv 配置
+  ARXIV:
+    BASE_URL: "http://export.arxiv.org/api/query"
+    MAX_RESULTS: 10
+  
+  # PubMed Central 配置
+  PUBMED_CENTRAL:
+    BASE_URL: "https://www.ncbi.nlm.nih.gov/pmc"
+    API_BASE: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+    MAX_RESULTS: 20
+    DELAY: 1.0
+  
+  # DOAJ (Directory of Open Access Journals) 配置
+  DOAJ:
+    BASE_URL: "https://doaj.org"
+    API_BASE: "https://doaj.org/api/v2"
+    MAX_RESULTS: 20
+    DELAY: 1.0
+  
+  # CORE 配置
+  CORE:
+    BASE_URL: "https://core.ac.uk"
+    API_BASE: "https://api.core.ac.uk/v3"
+    MAX_RESULTS: 20
+    DELAY: 1.0
+  
+  # Semantic Scholar 配置
+  SEMANTIC_SCHOLAR:
+    BASE_URL: "https://api.semanticscholar.org"
+    API_VERSION: "v1"
+    MAX_RESULTS: 20
+    DELAY: 0.5
+  
+  # ResearchGate 配置
+  RESEARCHGATE:
+    BASE_URL: "https://www.researchgate.net"
+    SEARCH_PATH: "/search"
+    MAX_RESULTS: 10
+    DELAY: 2.0
+  
+  # Academia.edu 配置
+  ACADEMIA_EDU:
+    BASE_URL: "https://www.academia.edu"
+    SEARCH_PATH: "/search"
+    MAX_RESULTS: 10
+    DELAY: 2.0
+  
+  # Zenodo 配置
+  ZENODO:
+    BASE_URL: "https://zenodo.org"
+    API_BASE: "https://zenodo.org/api"
+    MAX_RESULTS: 20
+    DELAY: 1.0
+  
+  # HAL 配置
+  HAL:
+    BASE_URL: "https://hal.archives-ouvertes.fr"
+    API_BASE: "https://api.archives-ouvertes.fr"
+    MAX_RESULTS: 20
+    DELAY: 1.0
+  
+  # bioRxiv 配置
+  BIORXIV:
+    BASE_URL: "https://www.biorxiv.org"
+    API_BASE: "https://api.biorxiv.org"
+    MAX_RESULTS: 20
+    DELAY: 1.0
+  
+  # medRxiv 配置
+  MEDRXIV:
+    BASE_URL: "https://www.medrxiv.org"
+    API_BASE: "https://api.medrxiv.org"
+    MAX_RESULTS: 20
+    DELAY: 1.0
+
+# 下载配置
+DOWNLOAD:
+  OUTPUT_DIR: "./downloads"
+  MAX_CONCURRENT: 3
+  TIMEOUT: 60
+  RETRY_ATTEMPTS: 3
+  RETRY_DELAY: 5.0
+  
+# 日志配置
+LOGGING:
+  LEVEL: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  FORMAT: "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+  FILE: "paper_downloader.log"
+  ROTATION: "10 MB"
+
+# 代理配置（可选）
+PROXY:
+  ENABLED: false
+  HTTP_PROXY: ""
+  HTTPS_PROXY: ""
+
+# 文件命名配置
+FILE_NAMING:
+  PATTERN: "{authors}_{year}_{title}"
+  MAX_LENGTH: 200
+  REPLACE_SPACES: true
+  
+# 元数据配置
+METADATA:
+  SAVE_BIBTEX: true
+  SAVE_JSON: true
+  EXTRACT_KEYWORDS: true
